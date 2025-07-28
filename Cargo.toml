@@ -1,0 +1,16 @@
+[package]
+name = "file_agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+walkdir = "2.3"
+warp = "0.3"
+sha2 = "0.10"
+systray = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+native-windows-gui = "1.0"

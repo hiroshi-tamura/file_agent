@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTT File Agent テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        input, textarea, button {
+            font-size: 14px;
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        input, textarea {
+            width: 300px;
+        }
+        textarea {
+            width: 600px;
+            height: 100px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .file-list {
+            margin-top: 10px;
+        }
+        .file-item {
+            padding: 5px;
+            margin: 2px 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .file-item:hover {
+            background: #e9ecef;
+        }
+        .file-item.file {
+            border-left: 3px solid #28a745;
+        }
+        .file-item.directory {
+            border-left: 3px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CTT File Agent API テスト</h1>
+        <div style="text-align: right; margin-bottom: 20px;">
+            <button onclick="setToken()" style="background: #6c757d;">トークン設定</button>
+        </div>
+
+        <!-- ヘルスチェック -->
+        <div class="section">
+            <h2>1. ヘルスチェック</h2>
+            <button onclick="checkHealth()">API状態確認</button>
+            <div id="healthResult" class="result"></div>
+        </div>
+
+        <!-- ディレクトリ一覧 -->
+        <div class="section">
+            <h2>2. ディレクトリ一覧</h2>
+            <input type="text" id="listPath" placeholder="パス (例: C:\)" value="C:\">
+            <button onclick="listDirectory()">一覧取得</button>
+            <div id="listResult" class="result"></div>
+            <div id="fileList" class="file-list"></div>
+        </div>
+
+        <!-- ファイル読み込み -->
+        <div class="section">
+            <h2>3. ファイル読み込み</h2>
+            <input type="text" id="readPath" placeholder="ファイルパス" style="width: 500px;">
+            <button onclick="readFile()">読み込み</button>
+            <div id="readResult" class="result"></div>
+        </div>
+
+        <!-- ファイル書き込み -->
+        <div class="section">
+            <h2>4. ファイル書き込み</h2>
+            <input type="text" id="writePath" placeholder="ファイルパス" style="width: 500px;"><br>
+            <textarea id="writeContent" placeholder="ファイル内容"></textarea><br>
+            <button onclick="writeFile()">書き込み</button>
+            <div id="writeResult" class="result"></div>
+        </div>
+
+        <!-- ファイル削除 -->
+        <div class="section">
+            <h2>5. ファイル削除</h2>
+            <input type="text" id="deletePath" placeholder="ファイルパス" style="width: 500px;">
+            <button onclick="deleteFile()">削除</button>
+            <div id="deleteResult" class="result"></div>
+        </div>
+
+        <!-- ファイル検索 -->
+        <div class="section">
+            <h2>6. ファイル検索</h2>
+            <input type="text" id="searchDir" placeholder="検索ディレクトリ" value="C:\" style="width: 300px;">
+            <input type="text" id="searchPattern" placeholder="検索パターン">
+            <button onclick="searchFiles()">検索</button>
+            <div id="searchResult" class="result"></div>
+        </div>
+
+        <!-- ファイル/フォルダ作成 -->
+        <div class="section">
+            <h2>7. ファイル/フォルダ作成</h2>
+            <input type="text" id="createPath" placeholder="作成パス" style="width: 500px;"><br>
+            <label><input type="radio" name="createType" value="file" checked> ファイル</label>
+            <label><input type="radio" name="createType" value="directory"> フォルダ</label><br>
+            <button onclick="createFileOrDir()">作成</button>
+            <div id="createResult" class="result"></div>
+        </div>
+
+        <!-- ファイル移動 -->
+        <div class="section">
+            <h2>8. ファイル移動</h2>
+            <input type="text" id="moveSource" placeholder="移動元パス" style="width: 500px;"><br>
+            <input type="text" id="moveDestination" placeholder="移動先パス" style="width: 500px;"><br>
+            <button onclick="moveFile()">移動</button>
+            <div id="moveResult" class="result"></div>
+        </div>
+
+        <!-- ファイルコピー -->
+        <div class="section">
+            <h2>9. ファイルコピー</h2>
+            <input type="text" id="copySource" placeholder="コピー元パス" style="width: 500px;"><br>
+            <input type="text" id="copyDestination" placeholder="コピー先パス" style="width: 500px;"><br>
+            <button onclick="copyFile()">コピー</button>
+            <div id="copyResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8767/api';
+        let API_TOKEN = 'default-token-12345'; // デフォルトトークン
+
+        // トークン設定
+        function setToken() {
+            const token = prompt('APIトークンを入力してください:', API_TOKEN);
+            if (token) {
+                API_TOKEN = token;
+                localStorage.setItem('ctt_api_token', token);
+                alert('トークンを設定しました');
+            }
+        }
+
+        // 保存されたトークンを読み込む
+        const savedToken = localStorage.getItem('ctt_api_token');
+        if (savedToken) {
+            API_TOKEN = savedToken;
+        }
+
+        // 結果表示関数
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+            element.className = 'result ' + (isError ? 'error' : 'success');
+        }
+
+        // ヘルスチェック
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResult('healthResult', data);
+            } catch (error) {
+                showResult('healthResult', 'エラー: APIサーバーに接続できません。CTT File Agentが起動していることを確認してください。', true);
+            }
+        }
+
+        // ディレクトリ一覧
+        async function listDirectory() {
+            const path = document.getElementById('listPath').value;
+            try {
+                const response = await fetch(`${API_BASE}/list?path=${encodeURIComponent(path)}&token=${encodeURIComponent(API_TOKEN)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('listResult', `${data.data.length}個のファイル/フォルダが見つかりました`);
+                    displayFileList(data.data);
+                } else {
+                    showResult('listResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('listResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // ファイルリスト表示
+        function displayFileList(files) {
+            const container = document.getElementById('fileList');
+            container.innerHTML = '';
+            
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = `file-item ${file.is_file ? 'file' : 'directory'}`;
+                item.innerHTML = `
+                    <strong>${file.name}</strong>
+                    ${file.is_file ? ` (${formatSize(file.size)})` : ' [フォルダ]'}
+                    <br><small>${file.path}</small>
+                `;
+                item.onclick = () => {
+                    if (file.is_file) {
+                        document.getElementById('readPath').value = file.path;
+                    } else {
+                        document.getElementById('listPath').value = file.path;
+                        listDirectory();
+                    }
+                };
+                container.appendChild(item);
+            });
+        }
+
+        // ファイルサイズフォーマット
+        function formatSize(bytes) {
+            if (!bytes) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // ファイル読み込み
+        async function readFile() {
+            const path = document.getElementById('readPath').value;
+            if (!path) {
+                showResult('readResult', 'パスを入力してください', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/read`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({path, token: API_TOKEN})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('readResult', data.data);
+                } else {
+                    showResult('readResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('readResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // ファイル書き込み
+        async function writeFile() {
+            const path = document.getElementById('writePath').value;
+            const content = document.getElementById('writeContent').value;
+            
+            if (!path || !content) {
+                showResult('writeResult', 'パスと内容を入力してください', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/write`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({path, content, token: API_TOKEN})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('writeResult', data.data);
+                } else {
+                    showResult('writeResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('writeResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // ファイル削除
+        async function deleteFile() {
+            const path = document.getElementById('deletePath').value;
+            if (!path) {
+                showResult('deleteResult', 'パスを入力してください', true);
+                return;
+            }
+
+            if (!confirm(`本当に削除しますか？\n${path}`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/delete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({path, token: API_TOKEN})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('deleteResult', data.data);
+                } else {
+                    showResult('deleteResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('deleteResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // ファイル検索
+        async function searchFiles() {
+            const directory = document.getElementById('searchDir').value;
+            const pattern = document.getElementById('searchPattern').value;
+            
+            if (!directory || !pattern) {
+                showResult('searchResult', 'ディレクトリとパターンを入力してください', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({directory, pattern, token: API_TOKEN})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('searchResult', `${data.data.length}個のファイルが見つかりました\n\n` + 
+                        data.data.map(f => `${f.path} ${f.is_file ? `(${formatSize(f.size)})` : '[フォルダ]'}`).join('\n'));
+                } else {
+                    showResult('searchResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('searchResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // ファイル/フォルダ作成
+        async function createFileOrDir() {
+            const path = document.getElementById('createPath').value;
+            const isDirectory = document.querySelector('input[name="createType"]:checked').value === 'directory';
+            
+            if (!path) {
+                showResult('createResult', 'パスを入力してください', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/create`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({path, is_directory: isDirectory, token: API_TOKEN})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('createResult', data.data);
+                } else {
+                    showResult('createResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('createResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // ファイル移動
+        async function moveFile() {
+            const source = document.getElementById('moveSource').value;
+            const destination = document.getElementById('moveDestination').value;
+            
+            if (!source || !destination) {
+                showResult('moveResult', '移動元と移動先を入力してください', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/move`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({source, destination, token: API_TOKEN})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('moveResult', data.data);
+                } else {
+                    showResult('moveResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('moveResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // ファイルコピー
+        async function copyFile() {
+            const source = document.getElementById('copySource').value;
+            const destination = document.getElementById('copyDestination').value;
+            
+            if (!source || !destination) {
+                showResult('copyResult', 'コピー元とコピー先を入力してください', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/copy`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({source, destination, token: API_TOKEN})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('copyResult', data.data);
+                } else {
+                    showResult('copyResult', data.error, true);
+                }
+            } catch (error) {
+                showResult('copyResult', 'エラー: ' + error.message, true);
+            }
+        }
+
+        // 初期化
+        window.onload = () => {
+            checkHealth();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Rust
+target/
+Cargo.lock
+
+# Generated files
+file_agent.ini
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
