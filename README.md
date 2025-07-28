@@ -1,35 +1,38 @@
 # File Agent
 
-高速ファイル操作APIサーバー with システムトレイ
+High-speed file operation API server with system tray
 
-## 概要
+## Overview
 
-File Agentは、Webブラウザからローカルファイルシステムに高速でアクセスできるAPIサーバーです。
-タスクトレイに常駐し、セキュアなトークン認証でファイル操作を提供します。
+File Agent is an API server that provides fast access to the local file system from web browsers.
+It runs in the system tray and offers secure file operations with token authentication.
 
-## 機能
+## Features
 
-- ✅ **ファイル検索** - パターンマッチングでサブフォルダ含む高速検索
-- ✅ **ファイル削除** - ファイル・フォルダの削除
-- ✅ **ファイル新規作成** - ファイル・フォルダの作成
-- ✅ **ファイル移動** - ファイル・フォルダの移動
-- ✅ **ファイルコピー** - ファイル・フォルダのコピー (再帰対応)
-- ✅ **ファイル参照** - テキストファイル内容の読み込み
-- ✅ **ディレクトリ一覧** - フォルダ内容の取得
-- ✅ **ファイル書き込み** - テキストファイルへの書き込み
-- ✅ **システムトレイ** - 右クリックメニューで設定・再起動・終了
-- ✅ **設定ダイアログ** - GUI設定画面 (保存後自動再起動)
+- ✅ **File Search** - Fast search with pattern matching including subfolders
+- ✅ **File Deletion** - Delete files and folders
+- ✅ **File Creation** - Create new files and folders
+- ✅ **File Movement** - Move files and folders
+- ✅ **File Copy** - Copy files and folders (recursive support)
+- ✅ **File Reading** - Read text file contents
+- ✅ **Directory Listing** - Get folder contents
+- ✅ **File Writing** - Write to text files
+- ✅ **Binary File Support** - Read/write binary files with Base64 encoding
+- ✅ **Web File Manager** - Explorer-like web interface
+- ✅ **Audio Player** - Waveform display and playback controls
+- ✅ **System Tray** - Right-click menu for settings, restart, and exit
+- ✅ **Settings Dialog** - GUI settings screen (auto-restart after save)
 
-## インストール
+## Installation
 
-1. リリースページから `file_agent.exe` をダウンロード
-2. 任意のフォルダに配置
-3. `icon.ico` を同じフォルダに配置 (オプション)
-4. 実行
+1. Download `file_agent.exe` from the releases page
+2. Place in any folder
+3. Place `icon.ico` in the same folder (optional)
+4. Run the executable
 
-## 設定
+## Configuration
 
-設定は `file_agent.ini` ファイルで管理されます (実行ファイルと同じ場所):
+Settings are managed in the `file_agent.ini` file (same location as executable):
 
 ```ini
 [Settings]
@@ -37,25 +40,25 @@ port=8767
 token=your-secure-token
 ```
 
-### 設定変更方法
+### Configuration Methods
 
-1. **GUI設定ダイアログ**: システムトレイアイコンを右クリック → 設定
-2. **手動編集**: `file_agent.ini` を直接編集後、再起動
+1. **GUI Settings Dialog**: Right-click system tray icon → Settings
+2. **Manual Edit**: Edit `file_agent.ini` directly, then restart
 
-## API仕様
+## API Specification
 
-### 認証
+### Authentication
 
-全てのAPIリクエストには `token` パラメータが必要です。トークンはSHA256でハッシュ化されて検証されます。
+All API requests require a `token` parameter. Tokens are verified using SHA256 hashing.
 
-### エンドポイント
+### Endpoints
 
-#### 1. ヘルスチェック
+#### 1. Health Check
 ```http
 GET /api/health
 ```
 
-#### 2. ファイル読み込み
+#### 2. File Reading
 ```http
 POST /api/read
 Content-Type: application/json
@@ -66,19 +69,42 @@ Content-Type: application/json
 }
 ```
 
-#### 3. ファイル書き込み
+#### 3. Binary File Reading
+```http
+POST /api/read_binary
+Content-Type: application/json
+
+{
+  "path": "C:\\path\\to\\file.bin",
+  "token": "your-token"
+}
+```
+
+#### 4. File Writing
 ```http
 POST /api/write
 Content-Type: application/json
 
 {
   "path": "C:\\path\\to\\file.txt",
-  "content": "ファイル内容",
+  "content": "File content",
   "token": "your-token"
 }
 ```
 
-#### 4. ファイル削除
+#### 5. Binary File Writing
+```http
+POST /api/write_binary
+Content-Type: application/json
+
+{
+  "path": "C:\\path\\to\\file.bin",
+  "content": "base64-encoded-data",
+  "token": "your-token"
+}
+```
+
+#### 6. File Deletion
 ```http
 POST /api/delete
 Content-Type: application/json
@@ -89,7 +115,7 @@ Content-Type: application/json
 }
 ```
 
-#### 5. ファイル検索
+#### 7. File Search
 ```http
 POST /api/search
 Content-Type: application/json
@@ -101,12 +127,12 @@ Content-Type: application/json
 }
 ```
 
-#### 6. ディレクトリ一覧
+#### 8. Directory Listing
 ```http
 GET /api/list?path=C:\\directory&token=your-token
 ```
 
-#### 7. ファイル/フォルダ作成
+#### 9. File/Folder Creation
 ```http
 POST /api/create
 Content-Type: application/json
@@ -118,7 +144,7 @@ Content-Type: application/json
 }
 ```
 
-#### 8. ファイル移動
+#### 10. File Movement
 ```http
 POST /api/move
 Content-Type: application/json
@@ -130,7 +156,7 @@ Content-Type: application/json
 }
 ```
 
-#### 9. ファイルコピー
+#### 11. File Copy
 ```http
 POST /api/copy
 Content-Type: application/json
@@ -142,34 +168,45 @@ Content-Type: application/json
 }
 ```
 
-### レスポンス形式
+### Response Format
 
-全てのAPIは以下の形式でレスポンスを返します:
+All APIs return responses in the following format:
 
 ```json
 {
   "success": true,
-  "data": "結果データ",
+  "data": "result data",
   "error": null
 }
 ```
 
-エラー時:
+On error:
 ```json
 {
   "success": false,
   "data": null,
-  "error": "エラーメッセージ"
+  "error": "error message"
 }
 ```
 
-## JavaScript使用例
+## Web File Manager
+
+Access `http://localhost:8767/sample/` in your browser for a full-featured file manager:
+
+- Windows Explorer-like interface
+- Drive selection and folder tree
+- Multiple view modes (list, grid, detail)
+- Fast search with caching
+- Audio player with waveform display
+- Virtual scrolling for large directories
+
+## JavaScript Usage Examples
 
 ```javascript
 const API_BASE = 'http://localhost:8767/api';
 const API_TOKEN = 'your-token';
 
-// ファイル読み込み
+// File reading
 async function readFile(path) {
     const response = await fetch(`${API_BASE}/read`, {
         method: 'POST',
@@ -179,13 +216,31 @@ async function readFile(path) {
     const data = await response.json();
     
     if (data.success) {
-        console.log('ファイル内容:', data.data);
+        console.log('File content:', data.data);
     } else {
-        console.error('エラー:', data.error);
+        console.error('Error:', data.error);
     }
 }
 
-// ファイル検索
+// Binary file reading
+async function readBinaryFile(path) {
+    const response = await fetch(`${API_BASE}/read_binary`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({path, token: API_TOKEN})
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+        // data.data contains base64-encoded binary data
+        const binaryData = atob(data.data);
+        console.log('Binary file loaded');
+    } else {
+        console.error('Error:', data.error);
+    }
+}
+
+// File search
 async function searchFiles(directory, pattern) {
     const response = await fetch(`${API_BASE}/search`, {
         method: 'POST',
@@ -195,57 +250,61 @@ async function searchFiles(directory, pattern) {
     const data = await response.json();
     
     if (data.success) {
-        console.log('検索結果:', data.data);
+        console.log('Search results:', data.data);
     } else {
-        console.error('エラー:', data.error);
+        console.error('Error:', data.error);
     }
 }
 
-// ディレクトリ一覧
+// Directory listing
 async function listDirectory(path) {
     const response = await fetch(`${API_BASE}/list?path=${encodeURIComponent(path)}&token=${encodeURIComponent(API_TOKEN)}`);
     const data = await response.json();
     
     if (data.success) {
-        console.log('ファイル一覧:', data.data);
+        console.log('File list:', data.data);
     } else {
-        console.error('エラー:', data.error);
+        console.error('Error:', data.error);
     }
 }
 ```
 
-## テスト
+## Security
 
-`example.html` をブラウザで開くことで、全てのAPI機能をテストできます。
+- SHA256 token authentication
+- CORS configuration
+- Localhost-only access
 
-## セキュリティ
+## Technical Specifications
 
-- SHA256トークン認証
-- CORS設定
-- ローカルホストのみアクセス可能
-
-## 技術仕様
-
-- **言語**: Rust
-- **Webフレームワーク**: Warp
-- **非同期ランタイム**: Tokio
-- **システムトレイ**: systray
+- **Language**: Rust
+- **Web Framework**: Warp
+- **Async Runtime**: Tokio
+- **System Tray**: systray
 - **GUI**: native-windows-gui (Windows)
+- **Binary Encoding**: Base64
 
-## システム要件
+## System Requirements
 
 - Windows 10/11 (64bit)
-- 空き容量: 10MB以上
-- メモリ: 50MB以上
+- Free space: 10MB+
+- Memory: 50MB+
 
-## ライセンス
+## License
 
 MIT License
 
-## 更新履歴
+## Changelog
+
+### v1.1.0
+- Added binary file read/write functionality
+- Added web-based file manager with Explorer-like UI
+- Added audio player with waveform display
+- Added fast search and caching
+- Added virtual scrolling for large directories
 
 ### v1.0.0
-- 初回リリース
-- 基本的なファイル操作API実装
-- システムトレイ対応
-- 設定ダイアログ実装
+- Initial release
+- Basic file operation API implementation
+- System tray support
+- Settings dialog implementation
