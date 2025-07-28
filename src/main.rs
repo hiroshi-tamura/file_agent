@@ -12,6 +12,7 @@ use warp::http::Method;
 use walkdir::WalkDir;
 use sha2::{Sha256, Digest};
 use systray::Application;
+use base64::{Engine as _, engine::general_purpose};
 
 #[cfg(target_os = "windows")]
 use native_windows_gui as nwg;
@@ -110,6 +111,13 @@ struct WriteRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+struct WriteBinaryRequest {
+    path: String,
+    content: String, // Base64エンコードされたバイナリデータ
+    token: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 struct DeleteRequest {
     path: String,
     token: String,
@@ -182,6 +190,32 @@ async fn read_file(request: ReadRequest, expected_hash: String) -> Result<impl R
     }
 }
 
+async fn read_binary_file(request: ReadRequest, expected_hash: String) -> Result<impl Reply, Rejection> {
+    if let Err(e) = check_auth(&request.token, &expected_hash).await {
+        return Ok(warp::reply::json(&ApiResponse::<String> {
+            success: false,
+            data: None,
+            error: Some(e),
+        }));
+    }
+    
+    match fs::read(&request.path) {
+        Ok(content) => {
+            let base64_content = general_purpose::STANDARD.encode(&content);
+            Ok(warp::reply::json(&ApiResponse {
+                success: true,
+                data: Some(base64_content),
+                error: None,
+            }))
+        },
+        Err(e) => Ok(warp::reply::json(&ApiResponse::<String> {
+            success: false,
+            data: None,
+            error: Some(e.to_string()),
+        })),
+    }
+}
+
 async fn write_file(request: WriteRequest, expected_hash: String) -> Result<impl Reply, Rejection> {
     if let Err(e) = check_auth(&request.token, &expected_hash).await {
         return Ok(warp::reply::json(&ApiResponse::<String> {
@@ -201,6 +235,40 @@ async fn write_file(request: WriteRequest, expected_hash: String) -> Result<impl
             success: false,
             data: None,
             error: Some(e.to_string()),
+        })),
+    }
+}
+
+async fn write_binary_file(request: WriteBinaryRequest, expected_hash: String) -> Result<impl Reply, Rejection> {
+    if let Err(e) = check_auth(&request.token, &expected_hash).await {
+        return Ok(warp::reply::json(&ApiResponse::<String> {
+            success: false,
+            data: None,
+            error: Some(e),
+        }));
+    }
+    
+    // Base64デコード
+    match general_purpose::STANDARD.decode(&request.content) {
+        Ok(binary_data) => {
+            // バイナリデータをファイルに書き込み
+            match fs::write(&request.path, &binary_data) {
+                Ok(_) => Ok(warp::reply::json(&ApiResponse {
+                    success: true,
+                    data: Some("Binary file written successfully".to_string()),
+                    error: None,
+                })),
+                Err(e) => Ok(warp::reply::json(&ApiResponse::<String> {
+                    success: false,
+                    data: None,
+                    error: Some(format!("File write error: {}", e)),
+                })),
+            }
+        },
+        Err(e) => Ok(warp::reply::json(&ApiResponse::<String> {
+            success: false,
+            data: None,
+            error: Some(format!("Base64 decode error: {}", e)),
         })),
     }
 }
@@ -522,11 +590,23 @@ async fn start_api_server(config: Config) {
         .and(token_hash_filter.clone())
         .and_then(read_file);
 
+    let read_binary_route = warp::path!("api" / "read_binary")
+        .and(warp::post())
+        .and(warp::body::json())
+        .and(token_hash_filter.clone())
+        .and_then(read_binary_file);
+
     let write_route = warp::path!("api" / "write")
         .and(warp::post())
         .and(warp::body::json())
         .and(token_hash_filter.clone())
         .and_then(write_file);
+
+    let write_binary_route = warp::path!("api" / "write_binary")
+        .and(warp::post())
+        .and(warp::body::json())
+        .and(token_hash_filter.clone())
+        .and_then(write_binary_file);
 
     let delete_route = warp::path!("api" / "delete")
         .and(warp::post())
@@ -576,7 +656,9 @@ async fn start_api_server(config: Config) {
         }));
 
     let routes = read_route
+        .or(read_binary_route)
         .or(write_route)
+        .or(write_binary_route)
         .or(delete_route)
         .or(search_route)
         .or(list_route)

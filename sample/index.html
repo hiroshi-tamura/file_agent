@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ファイルマネージャー - File Agent</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="drives-bar">
+                <div class="drives-container" id="drivesContainer">
+                    <div class="loading-drives">ドライブを読み込み中...</div>
+                </div>
+            </div>
+            <div class="navigation-bar">
+                <div class="nav-buttons">
+                    <button id="backBtn" class="nav-btn" disabled>◀</button>
+                    <button id="forwardBtn" class="nav-btn" disabled>▶</button>
+                    <button id="upBtn" class="nav-btn">🔼</button>
+                    <button id="homeBtn" class="nav-btn">🏠</button>
+                </div>
+                <div class="address-bar">
+                    <input type="text" id="addressInput" placeholder="アドレスを入力..." readonly>
+                    <button id="goBtn" class="go-btn">移動</button>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="検索...">
+                    <button id="searchBtn" class="search-btn">🔍</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3>フォルダツリー</h3>
+                    <button id="refreshTreeBtn" class="refresh-btn">🔄</button>
+                </div>
+                <div class="tree-container">
+                    <div id="folderTree" class="folder-tree">
+                        <div class="loading">フォルダツリーを読み込み中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="toolbar">
+                    <div class="breadcrumb" id="breadcrumb">
+                        <span class="breadcrumb-item">📁 コンピューター</span>
+                    </div>
+                    <div class="toolbar-right">
+                        <span class="file-count"><span id="fileCount">0</span> 個のアイテム</span>
+                        <div class="view-options">
+                            <button id="listView" class="view-btn active" title="リスト表示">📋</button>
+                            <button id="gridView" class="view-btn" title="グリッド表示">🔲</button>
+                            <button id="detailView" class="view-btn" title="詳細表示">📊</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="fileList" class="file-list">
+                    <div class="empty-state">
+                        <div class="empty-icon">💻</div>
+                        <p>ドライブを選択してください</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- オーディオプレイヤー -->
+        <div id="audioPlayer" class="audio-player hidden">
+            <div class="audio-header">
+                <div class="audio-info">
+                    <span class="audio-filename" id="audioFilename">オーディオファイルが選択されていません</span>
+                    <span class="audio-format" id="audioFormat"></span>
+                </div>
+                <button id="closeAudioPlayer" class="close-btn">×</button>
+            </div>
+            
+            <div class="waveform-container">
+                <canvas id="waveformCanvas" class="waveform-canvas"></canvas>
+                <div id="seekLine" class="seek-line"></div>
+                <div id="progressLine" class="progress-line"></div>
+            </div>
+            
+            <div class="audio-controls">
+                <div class="playback-controls">
+                    <button id="playPauseBtn" class="control-btn">▶️</button>
+                    <button id="stopBtn" class="control-btn">⏹️</button>
+                    <span class="time-display">
+                        <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+                    </span>
+                </div>
+                
+                <div class="volume-controls">
+                    <span class="volume-label">🔊</span>
+                    <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="70">
+                    <span class="volume-value" id="volumeValue">70%</span>
+                </div>
+                
+                <div class="peak-meter">
+                    <div class="peak-meter-bar">
+                        <div id="peakMeterL" class="peak-bar left"></div>
+                        <div id="peakMeterR" class="peak-bar right"></div>
+                    </div>
+                    <div class="peak-labels">
+                        <span>L</span>
+                        <span>R</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="statusText">準備完了</span>
+            <span class="connection-status">
+                <span id="connectionStatus" class="status-indicator offline">●</span>
+                File Agent
+            </span>
+        </div>
+    </div>
+
+    <!-- コンテキストメニュー -->
+    <div id="contextMenu" class="context-menu">
+        <div class="menu-item" data-action="open">📂 開く</div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" data-action="copy">📋 コピー</div>
+        <div class="menu-item" data-action="cut">✂️ 切り取り</div>
+        <div class="menu-item" data-action="paste">📄 貼り付け</div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" data-action="delete">🗑️ 削除</div>
+        <div class="menu-item" data-action="rename">✏️ 名前の変更</div>
+        <div class="menu-separator"></div>
+        <div class="menu-item" data-action="copy-path">📋 パスをコピー</div>
+        <div class="menu-item" data-action="properties">ⓘ プロパティ</div>
+    </div>
+
+    <!-- 新規作成メニュー -->
+    <div id="newItemMenu" class="context-menu">
+        <div class="menu-item" data-action="new-folder">📁 新しいフォルダ</div>
+        <div class="menu-item" data-action="new-file">📄 新しいファイル</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

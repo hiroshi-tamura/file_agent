@@ -11,6 +11,7 @@ walkdir = "2.3"
 warp = "0.3"
 sha2 = "0.10"
 systray = "0.4"
+base64 = "0.21"
 
 [target.'cfg(windows)'.dependencies]
 native-windows-gui = "1.0"
